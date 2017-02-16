@@ -50,3 +50,6 @@ md-data/
 
 # pycharm directory
 .idea
+
+# pylintrc
+.pylintrc
