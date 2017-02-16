@@ -82,8 +82,6 @@ def summarize_power_and_load(name, concentration, data_source='adk_md_data', neg
             # smaller than the increment size.
             return 0.0, 0.0
         
-        
-        
         if len(power_given_load) % 100 == 0:
             increment *= 10
         if len(power_given_load) > 1000:
