@@ -222,11 +222,39 @@ def plot_fluxes_and_velocity(concentrations, directional_flux, reciprocating_flu
         ax.annotate(r'{}'.format(label), xy=(0.5, 0.5), xytext=(0.18, 0.9), xycoords='figure fraction', fontsize=20)
     fig.patch.set_facecolor('white')
 
-def plot_flux_over_threshold(concentrations, number_above_threshold, number_above_threshold_2):
-    pass
+def plot_flux_over_threshold(concentrations, number_above_thresholds, colors, names,
+                             threshold_labels=None, xmin=10**-6, xmax=10**-2, ymin=0, ymax=140):
+    fig = plt.figure(figsize=(6 * 1.2, 6))
+    gs = GridSpec(1, 1, wspace=0.2, hspace=0.5)
+    ax = plt.subplot(gs[0, 0])
+    linestyles = ['-', '--']
+    # For simplicity, I think I should enforce paired plotting. That is, to plot the number of angles over two
+    # thresholds for each system, with the line styles given above. We should be able to handle an arbitrary number of
+    # pairs.
+    pairs = [number_above_thresholds[x:x+2] for x in range(0, len(number_above_thresholds), 2)]
+    for system, color, name in zip(pairs, colors, names):
+        ax.plot(concentrations, system[0], ls='-', c=color, label=name)
+        ax.plot(concentrations, system[1], ls='--', c=color)
 
 
-# Below, these helper functions help the plots
+    handles, labels = ax.get_legend_handles_labels()
+    display = (0, 1, 2)
+    artists = []
+    for threshold_label, style in zip(threshold_labels, linestyles):
+        artists.append(plt.Line2D((0, 1), (0, 0), color='k', linestyle=style))
+
+    ax.legend([handle for i, handle in enumerate(handles) if i in display] + artists,
+              [label for i, label in enumerate(labels) if i in display] + threshold_labels,
+              loc='upper left', frameon=True)
+    ax.set_xlabel('Substrate concentration (M)')
+    ax.set_ylabel('Number of angles over threshold')
+    ax.set_xscale('log')
+    ax.set_xlim([xmin, xmax])
+    ax.set_ylim([ymin, ymax])
+    paper_plot(fig)
+
+# Below, these helper functions are necessary for the summary plots that are designed mostly to read in pandas
+# dataframes
 def return_concentration_slice(df, concentration):
     """
     This helper function makes slicing dataframes easy.
