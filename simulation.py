@@ -6,7 +6,6 @@ population distributions.
 """
 
 import math as math
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy as sc
@@ -20,7 +19,7 @@ class Simulation(object):
     This class contains the code to calculate probability flux given two equilibrium
     population distributions.
     """
-    # This is a complicated class, we want more than seven attributes.
+    # This is a complicated class, we want more than seven attributes:
     # pylint: disable=too-many-instance-attributes
     # To use physically meaningful attribute names (i.e., kT):
     # pylint: disable=C0103
@@ -97,212 +96,7 @@ class Simulation(object):
         else:
             self.load_slope = 0
 
-    def plot_input(self, save=False, filename=None):
-        """
-        This function plots the unbound and bound input histograms associated with a simulation
-        object.
-        The input histograms are taken to be normalized populations derived from MD simulations.
-        """
 
-        fig = plt.figure(figsize=(6 * 1.2, 6))
-        gs = GridSpec(1, 1, wspace=0.2, hspace=0.5)
-        ax1 = plt.subplot(gs[0, 0])
-        ax1.plot(range(self.bins), self.unbound_population, c=self.unbound_clr)
-        ax1.plot(range(self.bins), self.bound_population,
-                 c=self.bound_clr, ls='--')
-        ax1.set_xticks([0, self.bins / 4, self.bins /
-                        2, 3 * self.bins / 4, self.bins])
-        ax1.set_xticklabels(
-            [r'$-\pi$', r'$-\frac{1}{2}\pi{}$', r'$0$', r'$\frac{1}{2}\pi$', r'$\pi$'])
-        ax1.set_xlabel('Dihedral angle (rad)')
-        ax1.set_ylabel(r'$p$ (input population)')
-        paper_plot(fig, scientific=False)
-        if save:
-            plt.savefig(filename + '.png', dpi=300, bbox_inches='tight')
-
-    def plot_energy(self, save=False, filename=None):
-        """
-        This function plots the unbound and bound energies (i.e., chemical potentials)
-        associated with a Simulation object.
-        """
-
-        fig = plt.figure(figsize=(6 * 1.2, 6))
-        gs = GridSpec(1, 1, wspace=0.2, hspace=0.5)
-        ax1 = plt.subplot(gs[0, 0])
-        ax1.plot(range(self.bins), self.unbound, c=self.unbound_clr)
-        ax1.plot(range(self.bins), self.bound, c=self.bound_clr, ls='--')
-        ax1.set_xticks([0, self.bins / 4, self.bins /
-                        2, 3 * self.bins / 4, self.bins])
-        ax1.set_xticklabels(
-            [r'$-\pi$', r'$-\frac{1}{2}\pi{}$', r'$0$', r'$\frac{1}{2}\pi$', r'$\pi$'])
-        ax1.set_xlabel(r'$\theta$ (rad)')
-        ax1.set_ylabel(r'$\mu$ (kcal mol$^{-1}$)')
-        paper_plot(fig, scientific=False)
-        if save:
-            plt.savefig(filename + '.png', dpi=300, bbox_inches='tight')
-
-    def plot_ss(self, save=False, filename=None):
-        """
-        This function plots the nonequilibrium steady-state distribution associated
-        with a Simulation object.
-        By default, this will plot the eigenvector-derived steady-state distribution.
-        """
-
-        fig = plt.figure(figsize=(6 * 1.2, 6))
-        gs = GridSpec(1, 1, wspace=0.2, hspace=0.5)
-        ax1 = plt.subplot(gs[0, 0])
-        ax1.plot(range(self.bins), self.ss[0:self.bins], c=self.unbound_clr)
-        ax1.plot(range(self.bins), self.ss[
-            self.bins:2 * self.bins], c=self.bound_clr, ls='--')
-        ax1.set_xticks([0, self.bins / 4, self.bins /
-                        2, 3 * self.bins / 4, self.bins])
-        ax1.set_xticklabels(
-            [r'$-\pi$', r'$-\frac{1}{2}\pi{}$', r'$0$', r'$\frac{1}{2}\pi$', r'$\pi$'])
-        ax1.set_xlabel('Dihedral angle (rad)')
-        ax1.set_ylabel(r'$p$ (probability)')
-        paper_plot(fig, scientific=False)
-        if save:
-            plt.savefig(filename + '.png', dpi=300, bbox_inches='tight')
-
-    def plot_flux(self, save=False, filename=None):
-        """
-        This function plots the intrasurface flux separately and as a sum. The intrasurface flux
-        is the directional flux. This also prints the simulation parameters.
-        """
-
-        print('{:<25} {:<+10.2e} {:<10}'.format('C',
-                                                self.C_intersurface, 'second**-1'))
-        print('{:<25} {:<+10.2e} {:<10}'.format('D',
-                                                self.D, 'degrees**2 second**-1'))
-        print('{:<25} {:<+10.2e} {:<10}'.format('k_{cat}',
-                                                self.catalytic_rate, 'second**-1'))
-        print('{:<25} {:<+10.2e} {:<10}'.format('[S]', self.cSubstrate, 'M'))
-        print('{:<25} {:<+10.2e} {:<10}'.format('dt', self.dt, 'second**-1'))
-        print('{:<25} {:<10} {:<10}'.format(
-            '-----------------', '---------', '---------'))
-        print('{:<25} {:<+10.2e} {:<10}'.format('Intrasurface flux',
-                                                np.mean(self.flux_u + self.flux_b),
-                                                'cycle second**-1'))
-        print('{:<25} {:<+10.2e} {:<10}'.format('Peak intrasurface flux',
-                                                np.max(np.hstack((abs(self.flux_u),
-                                                abs(self.flux_b)))),
-                                                'cycle second**-1'))
-        print('{:<25} {:<+10.2e} {:<10}'.format('Intersurface flux', np.mean(self.flux_ub),
-                                                'cycle second**-1'))
-        if self.load:
-            print('{:<25} {:<10} {:<10}'.format(
-                '-----------------', '---------', '---------'))
-            print('{:<25} {:<+10.2e} {:<10}'.format('Applied load',
-                                                    self.load_slope, 'kcal mol**-1 cycle**-1'))
-            print('{:<25} {:<+10.2e} {:<10}'.format('Power',
-                                                    self.load_slope * np.mean(self.flux_u + self.flux_b),
-                                                    'kcal mol**-1 second**-1'))
-        fig = plt.figure(figsize=(6 * 1.2, 6))
-        gs = GridSpec(1, 1, wspace=0.2, hspace=0.5)
-        ax1 = plt.subplot(gs[0, 0])
-        ax1.plot(range(self.bins), self.flux_u, c=self.unbound_clr, label='U')
-        ax1.plot(range(self.bins), self.flux_b,
-                 c=self.bound_clr, label='B', ls='--')
-        ax1.plot(range(self.bins), self.flux_b +
-                 self.flux_u, c='k', label='U+B')
-        # ax1.yaxis.set_major_formatter(
-        #    mpl.ticker.ScalarFormatter(useMathText=True, useOffset=False))
-        # ax1.set_title(r'{0:0.2f} $\pm$ {1:0.2f} cycle second$^{{-1}}$'.format(np.mean(self.flux_u + self.flux_b),
-        # np.std(self.flux_u + self.flux_b)))
-        ax1.set_xticks([0, self.bins / 4, self.bins /
-                        2, 3 * self.bins / 4, self.bins])
-        ax1.set_xticklabels(
-            [r'$-\pi$', r'$-\frac{1}{2}\pi{}$', r'$0$', r'$\frac{1}{2}\pi$', r'$\pi$'])
-        ax1.set_xlabel(r'$\theta$ (rad)')
-        ax1.set_ylabel('Flux $J$ (cycle s$^{-1}$)')
-        paper_plot(fig, scientific=False)
-        if save:
-            plt.savefig(filename + '.png', dpi=300, bbox_inches='tight')
-
-    def plot_intersurface_flux(self, save=False, filename=None):
-        """
-        This function plots the intersurface flux, this is useful for considering driven, oar-like motion.
-        """
-
-        fig = plt.figure(figsize=(6 * 1.2, 6))
-        gs = GridSpec(1, 1, wspace=0.2, hspace=0.5)
-        ax1 = plt.subplot(gs[0, 0])
-        ax1.plot(range(self.bins), self.flux_ub, c='k', label='U+B')
-        # ax1.yaxis.set_major_formatter(
-        #    mpl.ticker.ScalarFormatter(useMathText=True, useOffset=False))
-        ax1.set_xticks([0, self.bins / 4, self.bins /
-                        2, 3 * self.bins / 4, self.bins])
-        ax1.set_xticklabels(
-            [r'$-\pi$', r'$-\frac{1}{2}\pi{}$', r'$0$', r'$\frac{1}{2}\pi$', r'$\pi$'])
-        ax1.set_xlabel('Dihedral angle (rad)')
-        ax1.set_ylabel(r'Flux $J_{0 \leftrightarrow 1}$ (cycle second$^{-1}$)')
-        paper_plot(fig, scientific=False)
-        if save:
-            plt.savefig(filename + '.png', dpi=300, bbox_inches='tight')
-
-    def plot_load(self, save=False, filename=None):
-        """
-        This function plots the unbound and bound energy surfaces with a constant added load.
-        """
-
-        fig = plt.figure(figsize=(6 * 1.2, 6))
-        gs = GridSpec(1, 1, wspace=0.2, hspace=0.5)
-        ax1 = plt.subplot(gs[0, 0])
-
-        ax1.plot(np.arange(self.bins),
-                 [self.unbound[i] +
-                  self.load_function(i) for i in np.arange(self.bins)],
-                 c='k', ls='--', lw=2)
-        ax1.plot(np.arange(self.bins), self.unbound, c=self.unbound_clr)
-        ax1.plot(np.arange(self.bins), [self.bound[i] + self.load_function(i) for i in
-                                        np.arange(self.bins)],
-                 c='k', ls='--', lw=2)
-        ax1.plot(np.arange(self.bins), self.bound, c=self.bound_clr)
-
-        ax1.set_xticks([0, self.bins / 4, self.bins /
-                        2, 3 * self.bins / 4, self.bins])
-        ax1.set_xticklabels(
-            [r'$-\pi$', r'$-\frac{1}{2}\pi{}$', r'$0$', r'$\frac{1}{2}\pi$', r'$\pi$'])
-        ax1.set_xlabel('Dihedral angle (rad)')
-        ax1.set_ylabel(r'$\mu$ (kcal mol$^{-1}$)')
-        paper_plot(fig, scientific=False)
-        if save:
-            plt.savefig(filename + '.png', dpi=300, bbox_inches='tight')
-
-    def plot_load_extrapolation(self, save=False, filename=None):
-        """
-        This function plots the unbound and bound energy surfaces with a constant
-        added load over a larger range
-        to check the continuity of the load function is different than the ordinary
-        PBCs on the energy surfaces.
-        :return:
-        """
-        fig = plt.figure(figsize=(6 * 1.2, 6))
-        gs = GridSpec(1, 1, wspace=0.2, hspace=0.5)
-        ax1 = plt.subplot(gs[0, 0])
-
-        extended_u = np.concatenate((self.unbound, self.unbound, self.unbound))
-        extended_b = np.concatenate((self.bound, self.bound, self.bound))
-
-        ax1.plot(np.arange(-1 * self.bins / 2, self.bins + self.bins / 2),
-                 [extended_u[i] + self.load_function(i) for i in
-                  np.arange(-1 * self.bins / 2, self.bins + self.bins / 2)],
-                 c='k', ls='--', lw=2)
-        ax1.plot(np.arange(self.bins), self.unbound, c=self.unbound_clr)
-        ax1.plot(np.arange(-1 * self.bins / 2, self.bins + self.bins / 2),
-                 [extended_b[i] + self.load_function(i) for i in
-                  np.arange(-1 * self.bins / 2, self.bins + self.bins / 2)],
-                 c='k', ls='--', lw=2)
-        ax1.plot(np.arange(self.bins), self.bound, c=self.bound_clr)
-
-        ax1.set_xticks([-1 * self.bins / 2, 0, self.bins / 2,
-                        self.bins, self.bins + self.bins / 2])
-        ax1.set_xticklabels([r'$-\pi$', '$0$', r'$\pi$', r'$2\pi$', r'$3\pi$'])
-        ax1.set_xlabel('Dihedral angle (rad)')
-        ax1.set_ylabel(r'$\mu$ (kcal mol$^{-1}$)')
-        paper_plot(fig, scientific=False)
-        if save:
-            plt.savefig(filename + '.png', dpi=300, bbox_inches='tight')
 
     def data_to_energy(self, histogram):
         """
@@ -602,7 +396,7 @@ class Simulation(object):
             self.bound_clr = cmap[7]
 
         elif self.data_source == 'adk_md_data':
-            self.dir = '../../md-data/adenylate-kinase'
+            self.dir = './md-data/adenylate-kinase'
             try:
                 self.unbound_population = np.genfromtxt(self.dir + '/AdKDihedHist_apo-4ake/' +
                                                         self.name + '.dat',

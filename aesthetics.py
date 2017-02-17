@@ -77,7 +77,7 @@ def paper_plot(fig, adjustment=0, scientific=False):
         facecolor = 'white'
         if facecolor is False:
             facecolor = fig.get_facecolor()
-            alpha = 1
+        alpha = 1
         color_with_alpha = colorConverter.to_rgba(facecolor, alpha)
         fig.patch.set_facecolor(color_with_alpha)
         # Stick the scientific notation into the axis label, instead of the 

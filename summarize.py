@@ -1,7 +1,16 @@
-from simulation import *
+#!/usr/bin/env python
+"""
+These functions slice flux, power, and load from pickle files that contain the results
+of scanning across concentration.
+"""
 
+from simulation import *
+from errator import *
+
+@narrate
 def summarize_fluxes(name, concentration, data_source='adk_md_data', catalytic_rate=None):
-    this = simulation(data_source = data_source)
+
+    this = Simulation(data_source = data_source)
     this.cSubstrate = concentration
     if catalytic_rate:
         this.catalytic_rate = catalytic_rate
@@ -16,12 +25,12 @@ def summarize_fluxes(name, concentration, data_source='adk_md_data', catalytic_r
     max_unbound = max(unbound_flux)
     max_bound = max(bound_flux)
     driven_flux = max([max_unbound, max_bound])
-    del this
     return directional_flux, intersurface_flux, driven_flux
 
+@narrate
 def summarize_power_and_load(name, concentration, data_source='adk_md_data', negative=False,
                             debug=False, catalytic_rate=None):
-    this = simulation(data_source=data_source)
+    this = Simulation(data_source=data_source)
     this.cSubstrate = concentration
     if catalytic_rate:
         this.catalytic_rate = catalytic_rate
@@ -76,12 +85,11 @@ def summarize_power_and_load(name, concentration, data_source='adk_md_data', neg
                 # break
                 return max_power, loads[max_power_index]
         if max_power == 0 and len(power_given_load) > 100:
-            # Sometimes this happens... 
+            # Sometimes this happens...
             # We should probably make a note of this too. Ugh.
-            # This can happen if the maximum load that can be supported is even 
+            # This can happen if the maximum load that can be supported is even
             # smaller than the increment size.
             return 0.0, 0.0
-        
         if len(power_given_load) % 100 == 0:
             increment *= 10
         if len(power_given_load) > 1000:
