@@ -6,6 +6,8 @@ from matplotlib.colors import colorConverter
 import seaborn as sns
 import numpy as np
 from aesthetics import paper_plot
+from simulation import *
+from tqdm import tqdm
 
 
 def plot_input(this, save=False, filename=None):
@@ -117,7 +119,6 @@ def plot_flux(this, save=False, filename=None):
     dt = this.dt
     unbound_flux = this.flux_u
     bound_flux = this.flux_b
-    intersurface_flux = this.flux_ub
     unbound_clr = this.unbound_clr
     bound_clr = this.bound_clr
     load = this.load
@@ -185,4 +186,83 @@ def plot_load(this, save=False, filename=None):
         plt.savefig(filename + '.png', dpi=300, bbox_inches='tight')
 
 
-# Now, these are summary plots.
+
+
+def plot_fluxes_and_velocity(concentrations, directional_flux, reciprocating_flux, velocity,
+                             ymin1=None, ymax1=None, label=None):
+    cmap = sns.color_palette("Paired", 10)
+    fig = plt.figure(figsize=(6 * 1.2, 6))
+    gs = GridSpec(1, 1, wspace=0.2, hspace=0.5)
+    ax1 = plt.subplot(gs[0, 0])
+
+    ax1.plot(concentrations, velocity, c=cmap[1])
+    ax1.set_xscale('log')
+    ax1.set_ylim([ymin1, ymax1])
+    ax1.set_ylabel(r'Catalytic rate (turnover s$^{{-1}}$)', color=cmap[1])
+    ax2 = ax1.twinx()
+    ax2.plot(concentrations, [abs(i) for i in directional_flux], c=cmap[3])
+    ax2.plot(concentrations, [abs(i) for i in reciprocating_flux], c=cmap[3], ls='--')
+    ax2.set_ylabel('Directional and reciprocating flux\n(cycle s$^{{-1}}$)', color=cmap[3])
+    ax2.set_ylim([ymin1, ymax1])
+    for tl in ax1.get_yticklabels():
+        tl.set_color(cmap[1])
+    for tl in ax2.get_yticklabels():
+        tl.set_color(cmap[3])
+    ax1.set_xlabel('Substrate concentration (M)')
+    for ax in fig.axes:
+        ax.tick_params(which='major', direction='out', length=10, pad=10)
+        ax.tick_params(which='minor', direction='out', length=5)
+        ax.xaxis.set_tick_params(width=2)
+        ax.yaxis.set_tick_params(width=2)
+        ax.xaxis.set_ticks_position('bottom')
+        ax.spines["top"].set_visible(False)
+        ax.xaxis.labelpad = 15
+        ax.yaxis.labelpad = 15
+    if label:
+        ax.annotate(r'{}'.format(label), xy=(0.5, 0.5), xytext=(0.18, 0.9), xycoords='figure fraction', fontsize=20)
+    fig.patch.set_facecolor('white')
+
+def plot_flux_over_threshold(concentrations, number_above_threshold, number_above_threshold_2):
+    pass
+
+
+# Below, these helper functions help the plots
+def return_concentration_slice(df, concentration):
+    """
+    This helper function makes slicing dataframes easy.
+    :param df: a dataframe that contains a column named 'Concentration'
+    :param concentration: a target concentration, that will be rounded
+    :return: the dataframe slice at the given concentration
+    """
+    tmp = df[np.round(df['Concentration'], 1) ==  np.round(concentration, 1)]
+    return tmp
+
+
+def return_fluxes_and_velocity(protein, name, concentrations):
+    """
+    This helper function will return the turnover rate and the fluxes over a concentration range.
+    :param protein: one of the recognized protein systems in the class
+    :param name: filename of the torsion
+    :param concentrations: a list concentrations
+    :return:
+    """
+    directional_flux, reciprocating_flux, velocity = [], [], []
+    for concentration in tqdm(concentrations):
+        this = Simulation(data_source=protein)
+        this.name = name
+        this.cSubstrate = concentration
+        this.simulate()
+        directional_flux.append(np.mean(this.flux_u + this.flux_b))
+        reciprocating_flux.append(np.max(np.hstack((abs(this.flux_u), abs(this.flux_b)))))
+        velocity.append(np.sum(this.ss[this.bins:2*this.bins]) * this.catalytic_rate)
+    return directional_flux, reciprocating_flux, velocity
+
+
+def find_above_threshold(df, quantity, threshold):
+    concentrations = []
+    number_above_threshold = []
+    for concentration in tqdm(np.unique(df['Concentration'].values)):
+        tmp = return_concentration_slice(df, concentration)
+        concentrations.append(10**concentration)
+        number_above_threshold.append(sum(tmp[str(quantity)].abs() > threshold))
+    return concentrations, number_above_threshold
