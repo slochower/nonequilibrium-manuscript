@@ -186,8 +186,6 @@ def plot_load(this, save=False, filename=None):
         plt.savefig(filename + '.png', dpi=300, bbox_inches='tight')
 
 
-
-
 def plot_fluxes_and_velocity(concentrations, directional_flux, reciprocating_flux, velocity,
                              ymin1=None, ymax1=None, label=None):
     cmap = sns.color_palette("Paired", 10)
