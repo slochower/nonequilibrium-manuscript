@@ -148,7 +148,8 @@ def plot_flux(this, save=False, filename=None):
     ax1 = plt.subplot(gs[0, 0])
     ax1.plot(range(bins), unbound_flux, c=unbound_clr)
     ax1.plot(range(bins), bound_flux,   c=bound_clr, ls='--')
-    ax1.plot(range(bins), unbound_flux + bound_flux, c='k', ls='-', lw=2, alpha=0.5, zorder=-1, label='Net flux')
+    ax1.plot(range(bins), unbound_flux + bound_flux, 'o', c='k', lw=2, alpha=0.5, zorder=-1, label='Net flux')
+    # ax1.scatter(range(bins), unbound_flux + bound_flux, c='k', marker='+-')
     ax1.set_xticks([0, bins / 4, bins / 2, 3 * bins / 4, bins])
     ax1.set_xticklabels(
         [r'$-\pi$', r'$-\frac{1}{2}\pi{}$', r'$0$', r'$\frac{1}{2}\pi$', r'$\pi$'])
