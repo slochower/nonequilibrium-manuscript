@@ -150,12 +150,13 @@ def plot_flux(this, save=False, filename=None):
     ax1.plot(range(bins), bound_flux,   c=bound_clr, ls='--')
     ax1.plot(range(bins), unbound_flux + bound_flux, 'o', c='k', lw=2, alpha=0.5, zorder=-1, label='Net flux')
     # ax1.scatter(range(bins), unbound_flux + bound_flux, c='k', marker='+-')
+    # ax1.set_xlim([0, bins])
     ax1.set_xticks([0, bins / 4, bins / 2, 3 * bins / 4, bins])
     ax1.set_xticklabels(
         [r'$-\pi$', r'$-\frac{1}{2}\pi{}$', r'$0$', r'$\frac{1}{2}\pi$', r'$\pi$'])
     ax1.set_xlabel(r'$\theta$ (rad)')
     ax1.set_ylabel('Flux $J$ (cycle s$^{-1}$)')
-    ax1.legend(frameon=True)
+    ax1.legend(frameon=True, loc=1, framealpha=1.0, edgecolor='k')
     paper_plot(fig, scientific=False)
     if save:
         plt.savefig(filename + '.png', dpi=300, bbox_inches='tight')
@@ -203,6 +204,7 @@ def plot_fluxes_and_velocity(concentrations, directional_flux, reciprocating_flu
     ax1.set_xscale('log')
     ax1.set_ylim([ymin1, ymax1])
     ax1.set_ylabel(r'Catalytic rate (turnover s$^{{-1}}$)', color=cmap[1])
+
     ax2 = ax1.twinx()
     ax2.plot(concentrations, [abs(i) for i in directional_flux], c=cmap[3])
     ax2.plot(concentrations, [abs(i) for i in reciprocating_flux], c=cmap[3], ls='--')
@@ -223,7 +225,21 @@ def plot_fluxes_and_velocity(concentrations, directional_flux, reciprocating_flu
         ax.xaxis.labelpad = 15
         ax.yaxis.labelpad = 15
     if label:
-        ax.annotate(r'{}'.format(label), xy=(0.5, 0.5), xytext=(0.18, 0.9), xycoords='figure fraction', fontsize=20)
+        ax.annotate(r'{}'.format(label), xy=(0.5, 0.5), xytext=(0.18, 0.70), xycoords='figure fraction', fontsize=20)
+    threshold_labels = ['Directional', 'Reciprocating']
+    linestyles = ['-', '--']
+    colors = [cmap[3], cmap[3]]
+    handles, labels = ax.get_legend_handles_labels()
+    display = (0, 1, 2)
+    artists = []
+    if threshold_labels:
+        for threshold_label, style, c in zip(threshold_labels, linestyles, colors):
+            artists.append(plt.Line2D((0, 1), (0, 0), color=c, linestyle=style))
+        ax.legend([handle for i, handle in enumerate(handles) if i in display] + artists,
+                  [label for i, label in enumerate(labels) if i in display] + threshold_labels,
+                  loc='upper left', frameon=True, framealpha=1.0, edgecolor='k')
+    ax1.set_xlim([10**-6, 10**0])
+    ax1.set_xticks([10**-6, 10**-5, 10**-4, 10**-3, 10**-2, 10**-1, 10**0])
     fig.patch.set_facecolor('white')
 
 def plot_flux_over_threshold(concentrations, number_above_thresholds, colors, names,
@@ -244,18 +260,42 @@ def plot_flux_over_threshold(concentrations, number_above_thresholds, colors, na
     handles, labels = ax.get_legend_handles_labels()
     display = (0, 1, 2)
     artists = []
-    for threshold_label, style in zip(threshold_labels, linestyles):
-        artists.append(plt.Line2D((0, 1), (0, 0), color='k', linestyle=style))
+    if threshold_labels:
+        for threshold_label, style in zip(threshold_labels, linestyles):
+            artists.append(plt.Line2D((0, 1), (0, 0), color='k', linestyle=style))
 
-    ax.legend([handle for i, handle in enumerate(handles) if i in display] + artists,
-              [label for i, label in enumerate(labels) if i in display] + threshold_labels,
-              loc='upper left', frameon=True)
+        ax.legend([handle for i, handle in enumerate(handles) if i in display] + artists,
+                  [label for i, label in enumerate(labels) if i in display] + threshold_labels,
+                  loc='upper left', frameon=True, framealpha=1.0, edgecolor='k')
     ax.set_xlabel('Substrate concentration (M)')
-    ax.set_ylabel('Number of angles over threshold')
+    ax.set_ylabel('Number over threshold')
     ax.set_xscale('log')
     ax.set_xlim([xmin, xmax])
     ax.set_ylim([ymin, ymax])
     paper_plot(fig)
+
+def plot_load_over_threshold(concentrations, number_above_thresholds, colors, names,
+                             annotation=None, annotation_x=None, annotation_y=None,
+                             xmin=10**-6, xmax=10**-2, ymin=0, ymax=140):
+    fig = plt.figure(figsize=(6 * 1.2, 6))
+    gs = GridSpec(1, 1, wspace=0.2, hspace=0.5)
+    ax = plt.subplot(gs[0, 0])
+
+    for system, color, name in zip(number_above_thresholds, colors, names):
+        ax.step(concentrations, system, ls='-', c=color, label=name)
+
+    if annotation:
+        ax.annotate(annotation, xy=(0.5, 0.5),
+                    xytext=(annotation_x, annotation_y), xycoords='figure fraction', fontsize=20)
+
+    ax.legend(loc='upper left', frameon=True, framealpha=1.0, edgecolor='k')
+    ax.set_xlabel('Substrate concentration (M)')
+    ax.set_ylabel('Number over threshold')
+    ax.set_xscale('log')
+    ax.set_xlim([xmin, xmax])
+    ax.set_ylim([ymin, ymax])
+    paper_plot(fig)
+
 
 # Below, these helper functions are necessary for the summary plots that are designed mostly to read in pandas
 # dataframes
@@ -298,3 +338,16 @@ def find_above_threshold(df, quantity, threshold):
         concentrations.append(10**concentration)
         number_above_threshold.append(sum(tmp[str(quantity)].abs() > threshold))
     return concentrations, number_above_threshold
+
+# To render the dihedrals by their flux values in chimera.
+
+def data_frame_to_chimera(df, df_index_column, df_target_column, filename, chimera_label):
+    file = str(filename) + '.dat'
+    f = open(file, 'w')
+    f.write('attribute: {}\n'.format(chimera_label))
+    f.write('match mode: any\n')
+    f.write('recipient: residues\n')
+    for i in range(min(df[df_index_column].astype(int)), max(df[df_index_column].astype(int)) + 1):
+        x = np.max(abs(df[df[df_index_column] == i][df_target_column]))
+        f.write('\t:{}\t{}\n'.format(i, x))
+    f.close()

@@ -33,8 +33,6 @@ class Simulation(object):
         # The butane-derived D value is 3 * 10 ** 15, but we've now shown that
         # a lower value can be safely used without changing the results much.
         self.D = 3 * 10 ** 12  # degree**2 per second
-        # By default, don't iteratively refine the steady state population.
-        self.iterations = 0
         # Implementation parameters
         self.dir = None
         self.data_source = data_source
@@ -286,65 +284,7 @@ class Simulation(object):
         self.flux_ub = flux_ub
         return
 
-    def iterate(self, iterations=None):
-        """
-        A template population distribution is multiplied by the transition matrix.
-        By default, iterations are 0. The output of this command is set to
-        `self.iterative_ss` which can be passed to `calculate_flux`.
-        The new population can be set to a normalized random distribution or the eigenvector-derived
-        steady-state distribution.
-        """
 
-        print('Running iterative method with {} iterations'.format(self.iterations))
-
-        # Instead of starting with a random population, I'm going to start with a population spike
-        # in the first bin.
-        # population = np.random.rand(2 * self.bins)
-
-        def gaussian(x, mu, sig):
-            return np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.)))
-
-        def calculate_msd(population, mu):
-            msd = []
-            for position in range(2 * self.bins):
-                msd.append(population[position] *
-                           ((position - mu) * (360 / self.bins)) ** 2)
-            return np.sum(msd)
-
-        population = np.zeros((2 * self.bins))
-        population = np.array([gaussian(i, self.bins / 2, 2)
-                               for i in range(2 * self.bins)])
-        row_sums = population.sum(axis=0, keepdims=True)
-        population = population / row_sums
-        # Now, keep track of the center of mass of the population.
-        self.iterative_com = []
-        self.iterative_com.append(
-            sc.ndimage.measurements.center_of_mass(population))
-        fig = plt.figure(figsize=(6 * 1.2, 6))
-        gs = GridSpec(1, 1, wspace=0.2, hspace=0.5)
-        ax1 = plt.subplot(gs[0, 0])
-
-        ax1.plot(range(self.bins), population[0:self.bins], c='k', alpha=1)
-
-        new_population = np.copy(population)
-        self.msd = np.empty((self.iterations + 1))
-        self.msd[0] = calculate_msd(population, self.bins / 2)
-
-        for i in range(self.iterations):
-            new_population = np.dot(new_population, self.tm)
-            self.msd[i + 1] = calculate_msd(new_population, self.bins / 2)
-            print('MSD = {}'.format(self.msd[i]))
-            ax1.plot(range(self.bins), new_population[
-                                       0:self.bins], c=self.unbound_clr, alpha=0.1)
-            self.iterative_com.append(
-                sc.ndimage.measurements.center_of_mass(new_population))
-        self.iterative_ss = new_population
-        ax1.set_xticklabels(
-            ['$0$', r'$\frac{1}{2}\pi{}$', r'$\pi$', r'$\frac{3}{2}\pi$', r'$2\pi$'])
-        ax1.set_xlabel('Dihedral angle (rad)')
-        ax1.set_ylabel('Population')
-        paper_plot(fig, scientific=False)
-        return
 
     def simulate(self, plot=False, user_energies=False, catalysis=True):
         """
@@ -454,8 +394,7 @@ class Simulation(object):
 
         self.bins = len(self.unbound)
         self.tm = np.zeros((self.bins, self.bins))
-        self.C_intrasurface = self.D / \
-                              (360. / self.bins) ** 2  # per degree per second
+        self.C_intrasurface = self.D / (360. / self.bins) ** 2  # per degree per second
 
         if not self.load:
             u_rm = self.calculate_intrasurface_rates(self.unbound)
@@ -479,11 +418,6 @@ class Simulation(object):
             self.plot_ss()
             self.plot_flux()
             self.plot_intersurface_flux()
-        if self.iterations != 0:
-            self.iterate(self.iterations)
-            self.calculate_flux(self.iterative_ss, self.tm)
-            if plot:
-                self.plot_flux()
         return
 
     def load_function(self, x):

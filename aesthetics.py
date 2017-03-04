@@ -53,8 +53,7 @@ def paper_plot(fig, adjustment=0, scientific=False):
         r'\sansmath',
         r'\renewcommand{\familydefault}{\sfdefault}',
         r'\usepackage[T1]{fontenc}',
-        r'\usepackage{graphicx}',
-        r'\usepackage{relsize}'
+        r'\usepackage{graphicx}'
         ]
 
     for ax in fig.axes:
@@ -99,7 +98,8 @@ def paper_plot(fig, adjustment=0, scientific=False):
         for axis in ['top','bottom','left','right']:
             ax.spines[axis].set_linewidth(2)
 
-def generic_plot(x, y, xlabel=None, ylabel=None, scientific=False, c=None):
+def generic_plot(x, y, xlabel=None, ylabel=None, scientific=False, c=None, panel_label=None,
+                 panel_xoffset=-0.24, panel_yoffset=0.95):
     fig = plt.figure(figsize=(6 * 1.2, 6))
     gs = GridSpec(1, 1, wspace=0.2, hspace=0.5)
     ax = plt.subplot(gs[0, 0])
@@ -113,6 +113,27 @@ def generic_plot(x, y, xlabel=None, ylabel=None, scientific=False, c=None):
         ax.set_ylabel(ylabel)
     if scientific:
         pretty_label(ax)
+    if panel_label:
+        ax.annotate(r'\textbf{{ {} }}'.format(panel_label), xy=(0, 0), xytext=(panel_xoffset, panel_yoffset),
+                    xycoords='axes fraction', fontsize=24, fontweight='bold')
     ax.margins(None)
     paper_plot(fig)
     return ax
+
+def panel_label(panel_label=None,
+                 panel_xoffset=-0.24, panel_yoffset=0.95):
+    ax = plt.gca()
+    ax.annotate(r'\textbf{{ {} }}'.format(panel_label), xy=(0, 0), xytext=(panel_xoffset, panel_yoffset),
+                xycoords='axes fraction', fontsize=24, fontweight='bold')
+
+#
+# def two_panel_plot(exes, whys, xlabels, ylabels, colors, panel_kws=[-0.24, 0.9]):
+#     fig, axes = plt.subplots(figsize=(2 * 6 * 1.2, 6), nrows=1, ncols=2, gridspec_kw={'wspace':0.2, 'hspace':0.5})
+#     panel_labels = ['a', 'b']
+#     for ax, x, y, xlabel, ylabel, color, panel_label in zip(axes, exes, whys, xlabels, ylabels, colors, panel_labels):
+#         ax.plot(x, y, 'o', markersize=10, markeredgecolor='k', markeredgewidth=0.8, alpha=0.5, mfc=color)
+#         ax.set_xlabel(xlabel)
+#         ax.set_ylabel(ylabel)
+#         ax.annotate(r'\textbf{{ {} }}'.format(panel_label), xy=(0, 0), xytext=(panel_kws[0], panel_kws[1]),
+#                     xycoords='axes fraction', fontsize=24, fontweight='bold')
+#     paper_plot(fig)
