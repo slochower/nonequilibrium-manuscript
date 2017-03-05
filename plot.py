@@ -208,7 +208,7 @@ def plot_fluxes_and_velocity(concentrations, directional_flux, reciprocating_flu
     ax2 = ax1.twinx()
     ax2.plot(concentrations, [abs(i) for i in directional_flux], c=cmap[3])
     ax2.plot(concentrations, [abs(i) for i in reciprocating_flux], c=cmap[3], ls='--')
-    ax2.set_ylabel('Directional and reciprocating flux\n(cycle s$^{{-1}}$)', color=cmap[3])
+    ax2.set_ylabel('Flux (cycle s$^{{-1}}$)', color=cmap[3])
     ax2.set_ylim([ymin1, ymax1])
     for tl in ax1.get_yticklabels():
         tl.set_color(cmap[1])
