@@ -5,12 +5,18 @@ of scanning across concentration.
 """
 
 from simulation import *
-from errator import *
 
-@narrate
+
 def summarize_fluxes(name, concentration, data_source='adk_md_data', catalytic_rate=None):
-
-    this = Simulation(data_source = data_source)
+    """
+    Report fluxes for a file at a given concentration.
+    :param name:
+    :param concentration:
+    :param data_source:
+    :param catalytic_rate:
+    :return:
+    """
+    this = Simulation(data_source=data_source)
     this.cSubstrate = concentration
     if catalytic_rate:
         this.catalytic_rate = catalytic_rate
@@ -27,9 +33,19 @@ def summarize_fluxes(name, concentration, data_source='adk_md_data', catalytic_r
     driven_flux = max([max_unbound, max_bound])
     return directional_flux, intersurface_flux, driven_flux
 
-@narrate
+
 def summarize_power_and_load(name, concentration, data_source='adk_md_data', negative=False,
-                            debug=False, catalytic_rate=None):
+                             debug=False, catalytic_rate=None):
+    """
+    Return power and load for a file at a given concentration.
+    :param name:
+    :param concentration:
+    :param data_source:
+    :param negative:
+    :param debug:
+    :param catalytic_rate:
+    :return:
+    """
     this = Simulation(data_source=data_source)
     this.cSubstrate = concentration
     if catalytic_rate:
