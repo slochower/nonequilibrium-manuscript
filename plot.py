@@ -187,7 +187,7 @@ def plot_load(this, save=False, filename=None):
     ax1.set_xticklabels(
             [r'$-\pi$', r'$-\frac{1}{2}\pi{}$', r'$0$', r'$\frac{1}{2}\pi$', r'$\pi$'])
     ax1.set_xlabel(r'$\theta$ (rad)')
-    ax1.set_ylabel(r'$\mu$ (kcal mol$^{-1}$)')
+    ax1.set_ylabel(r'Free energy (kcal mol$^{-1}$)')
     paper_plot(fig, scientific=False)
     if save:
         plt.savefig(filename + '.png', dpi=300, bbox_inches='tight')
@@ -255,6 +255,54 @@ def plot_fluxes_and_velocity(concentrations, directional_flux, reciprocating_flu
     ax1.set_xlim([10 ** -6, 10 ** 0])
     ax1.set_xticks([10 ** -6, 10 ** -5, 10 ** -4, 10 ** -3, 10 ** -2, 10 ** -1, 10 ** 0])
     fig.patch.set_facecolor('white')
+
+def plot_directional_flux_and_velocity(concentrations, directional_flux, velocity,
+                             ymin1=None, ymax1=None, label=None):
+    """
+
+    :param concentrations:
+    :param directional_flux:
+    :param reciprocating_flux:
+    :param velocity:
+    :param ymin1:
+    :param ymax1:
+    :param label:
+    """
+    cmap = sns.color_palette("Paired", 10)
+    fig = plt.figure(figsize=(6 * 1.2, 6))
+    gs = GridSpec(1, 1, wspace=0.2, hspace=0.5)
+    ax1 = plt.subplot(gs[0, 0])
+
+    ax1.plot(concentrations, velocity, c=cmap[1])
+    ax1.set_xscale('log')
+    ax1.set_ylim([ymin1, ymax1])
+    ax1.set_ylabel(r'Catalytic rate (turnover s$^{{-1}}$)', color=cmap[1])
+
+    ax2 = ax1.twinx()
+    ax2.plot(concentrations, [abs(i) for i in directional_flux], c=cmap[3])
+    ax2.set_ylabel('Directional flux (cycle s$^{{-1}}$)', color=cmap[3])
+    ax2.set_ylim([ymin1, ymax1])
+    for tl in ax1.get_yticklabels():
+        tl.set_color(cmap[1])
+    for tl in ax2.get_yticklabels():
+        tl.set_color(cmap[3])
+    ax1.set_xlabel('Substrate concentration (M)')
+    for ax in fig.axes:
+        ax.tick_params(which='major', direction='out', length=10, pad=10)
+        ax.tick_params(which='minor', direction='out', length=5)
+        ax.xaxis.set_tick_params(width=2)
+        ax.yaxis.set_tick_params(width=2)
+        ax.xaxis.set_ticks_position('bottom')
+        ax.spines["top"].set_visible(False)
+        ax.xaxis.labelpad = 15
+        ax.yaxis.labelpad = 15
+    if label:
+        ax.annotate(r'{}'.format(label), xy=(0.5, 0.5), xytext=(
+            0.18, 0.88), xycoords='figure fraction', fontsize=20)
+    ax1.set_xlim([10 ** -6, 10 ** 0])
+    ax1.set_xticks([10 ** -6, 10 ** -5, 10 ** -4, 10 ** -3, 10 ** -2, 10 ** -1, 10 ** 0])
+    fig.patch.set_facecolor('white')
+
 
 
 def plot_flux_over_threshold(concentrations, number_above_thresholds, colors, names,

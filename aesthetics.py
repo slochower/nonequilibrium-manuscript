@@ -148,7 +148,7 @@ def pretty_label(ax, axis='both'):
     except:
         ax = plt.gca()
 
-    ax.ticklabel_format(axis=axis, style='sci')
+    ax.ticklabel_format(axis=axis, style='sci', scilimits=(0,0))
     axes_instances = []
     if axis in ['x', 'both']:
         axes_instances.append(ax.xaxis)
